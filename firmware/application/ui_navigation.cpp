@@ -24,6 +24,12 @@
 
 #include "ui_navigation.hpp"
 
+//#----------------------------------------------------------------------
+
+#include "ui_lyra2demo.hpp"
+
+//#------------------------------------------------------------------------
+
 #include "bmp_modal_warning.hpp"
 #include "bmp_splash.hpp"
 #include "event_m0.hpp"
@@ -137,15 +143,15 @@ const NavigationView::AppList NavigationView::appList = {
     {"aprsrx", "APRS", RX, Color::green(), &bitmap_icon_aprs, new ViewFactory<APRSRXView>()},
     {"audio", "Audio", RX, Color::green(), &bitmap_icon_speaker, new ViewFactory<AnalogAudioView>()},
     //{"blecomm", "BLE Comm", RX, ui::Color::orange(), &bitmap_icon_btle, new ViewFactory<BLECommView>()},
-    {"blerx", "BLE Rx", RX, Color::green(), &bitmap_icon_btle, new ViewFactory<BLERxView>()},
+    //{"blerx", "BLE Rx", RX, Color::green(), &bitmap_icon_btle, new ViewFactory<BLERxView>()},
     {"ert", "ERT Meter", RX, Color::green(), &bitmap_icon_ert, new ViewFactory<ERTAppView>()},
     {"level", "Level", RX, Color::green(), &bitmap_icon_options_radio, new ViewFactory<LevelView>()},
-    {"pocsag", "POCSAG", RX, Color::green(), &bitmap_icon_pocsag, new ViewFactory<POCSAGAppView>()},
-    {"radiosonde", "Radiosnde", RX, Color::green(), &bitmap_icon_sonde, new ViewFactory<SondeView>()},
-    {"recon", "Recon", RX, Color::green(), &bitmap_icon_scanner, new ViewFactory<ReconView>()},
+    //{"pocsag", "POCSAG", RX, Color::green(), &bitmap_icon_pocsag, new ViewFactory<POCSAGAppView>()},
+    //{"radiosonde", "Radiosnde", RX, Color::green(), &bitmap_icon_sonde, new ViewFactory<SondeView>()},
+    //{"recon", "Recon", RX, Color::green(), &bitmap_icon_scanner, new ViewFactory<ReconView>()},
     {"search", "Search", RX, Color::yellow(), &bitmap_icon_search, new ViewFactory<SearchView>()},
-    {"subghzd", "SubGhzD", RX, Color::yellow(), &bitmap_icon_remote, new ViewFactory<SubGhzDView>()},
-    {"weather", "Weather", RX, Color::green(), &bitmap_icon_thermometer, new ViewFactory<WeatherView>()},
+    //{"subghzd", "SubGhzD", RX, Color::yellow(), &bitmap_icon_remote, new ViewFactory<SubGhzDView>()},
+    //{"weather", "Weather", RX, Color::green(), &bitmap_icon_thermometer, new ViewFactory<WeatherView>()},
     //{"fskrx", "FSK RX", RX, Color::yellow(), &bitmap_icon_remote, new ViewFactory<FskxRxMainView>()}, //for JT
     //{"dmr", "DMR", RX, Color::dark_grey(), &bitmap_icon_dmr, new ViewFactory<NotImplementedView>()},
     //{"sigfox", "SIGFOX", RX, Color::dark_grey(), &bitmap_icon_fox, new ViewFactory<NotImplementedView>()},
@@ -155,11 +161,11 @@ const NavigationView::AppList NavigationView::appList = {
     /* TX ********************************************************************/
     //{"adsbtx", "ADS-B TX", TX, ui::Color::green(), &bitmap_icon_adsb, new ViewFactory<ADSBTxView>()},
     {"aprstx", "APRS TX", TX, ui::Color::green(), &bitmap_icon_aprs, new ViewFactory<APRSTXView>()},
-    {"bht", "BHT Xy/EP", TX, ui::Color::green(), &bitmap_icon_bht, new ViewFactory<BHTView>()},
-    {"bletx", "BLE Tx", TX, ui::Color::green(), &bitmap_icon_btle, new ViewFactory<BLETxView>()},
-    {"ooktx", "OOK", TX, ui::Color::yellow(), &bitmap_icon_remote, new ViewFactory<EncodersView>()},
-    {"pocsagtx", "POCSAG TX", TX, ui::Color::green(), &bitmap_icon_pocsag, new ViewFactory<POCSAGTXView>()},
-    {"rdstx", "RDS", TX, ui::Color::green(), &bitmap_icon_rds, new ViewFactory<RDSView>()},
+    //{"bht", "BHT Xy/EP", TX, ui::Color::green(), &bitmap_icon_bht, new ViewFactory<BHTView>()},
+    //{"bletx", "BLE Tx", TX, ui::Color::green(), &bitmap_icon_btle, new ViewFactory<BLETxView>()},
+    //{"ooktx", "OOK", TX, ui::Color::yellow(), &bitmap_icon_remote, new ViewFactory<EncodersView>()},
+    //{"pocsagtx", "POCSAG TX", TX, ui::Color::green(), &bitmap_icon_pocsag, new ViewFactory<POCSAGTXView>()},
+    //{"rdstx", "RDS", TX, ui::Color::green(), &bitmap_icon_rds, new ViewFactory<RDSView>()},
     {"soundbrd", "Soundbrd", TX, ui::Color::green(), &bitmap_icon_soundboard, new ViewFactory<SoundBoardView>()},
     {"touchtune", "TouchTune", TX, ui::Color::green(), &bitmap_icon_touchtunes, new ViewFactory<TouchTunesView>()},
     /* UTILITIES *************************************************************/
@@ -170,6 +176,7 @@ const NavigationView::AppList NavigationView::appList = {
     {"iqtrim", "IQ Trim", UTILITIES, Color::orange(), &bitmap_icon_trim, new ViewFactory<IQTrimView>()},
     {nullptr, "SD Over USB", UTILITIES, Color::yellow(), &bitmap_icon_hackrf, new ViewFactory<SdOverUsbView>()},
     {"signalgen", "Signal Gen", UTILITIES, Color::green(), &bitmap_icon_cwgen, new ViewFactory<SigGenView>()},
+    {"lyra2demo", "Lyra2Part4", UTILITIES, Color::red(), &bitmap_stripes, new ViewFactory<Lyra2View>()},
     //{"testapp", "Test App", UTILITIES, Color::dark_grey(), nullptr, new ViewFactory<TestView>()},
 
     {"wavview", "Wav View", UTILITIES, Color::yellow(), &bitmap_icon_soundboard, new ViewFactory<ViewWavView>()},
