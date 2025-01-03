@@ -222,6 +222,7 @@ set(CPPSRC
 	receiver_model.cpp
 	recent_entries.cpp
 	replay_thread.cpp
+	replay_thread_controlled.cpp
 	rf_path.cpp
 	rtc_time.cpp
 	sd_card.cpp

@@ -13,7 +13,7 @@ namespace ui
     Lyra2View::Lyra2View(NavigationView &nav) : nav_(nav)
     {
        ::memset(peaks_buff, 0, PEAKS_BUFF_SIZE);
-       ::memset(message_buff, 0, MESSAGE_BUFF_SIZE);
+       ::memset(alphabet_buff, 0, ALPHABET_BUFF_SIZE);
        ::memset(dance_buff, 0, DANCE_BUFF_SIZE);
 
         baseband::run_image(portapack::spi_flash::image_tag_audio_tx);
@@ -24,7 +24,7 @@ namespace ui
         get_files_from_sd();
 
         load_wav(u"LYRA2/lyra2part4_audio.wav");
-        //play_wav();
+        play_wav();
     }
 
     Lyra2View::~Lyra2View() 
@@ -55,7 +55,7 @@ namespace ui
     {
         auto peaks_success = peaks.open(u"LYRA2/peaks.bin");
         auto dance_success = dance.open(u"LYRA2/dance.bin");
-        auto alphabet_success = alphabet.open(u"LYRA2/alphabet.bin");
+        auto alphabet_success = alphabet.open(u"LYRA2/hackrf_font.bin");
 
         peaks_is_found = peaks_success.is_valid() == 0;
         dance_is_found = dance_success.is_valid() == 0;
@@ -69,6 +69,15 @@ namespace ui
             peaks.read(peaks_buff, PEAKS_BUFF_SIZE_HALF);
             peak_pointer = PEAKS_BUFF_SIZE_HALF;
             peaks_buff_index_ready = 0;
+        }
+
+        if (alphabet_is_found)
+        {
+            alphabet.seek(0);
+            alphabet.read(alphabet_buff, ALPHABET_BUFF_SIZE_HALF);
+            alphabet.seek(ALPHABET_BUFF_SIZE_HALF);
+            alphabet.read(alphabet_buff+ALPHABET_BUFF_SIZE_HALF, ALPHABET_BUFF_SIZE_HALF);
+            alphabet.close();
         }
 
         return (peaks_is_found && dance_is_found && alphabet_is_found);
@@ -99,7 +108,8 @@ namespace ui
 
         const auto draw_y = display.scroll(0);
         display.draw_pixels({{0, draw_y}, {pixel_row.size(), 1}}, pixel_row);
-        peaks_buffer_check_and_update();
+        peak_index = peak_index + 1;
+        if (peak_index >= PEAKS_BUFF_SIZE) {peak_index = 0;}
 
         return true;
     }
@@ -107,44 +117,97 @@ namespace ui
     bool Lyra2View::tick_dance()
     {
         if (!dance_is_found) {return false;}
-        //if (!dance_buff_ready) {return false;}
+        if (!dance_buff_ready) {return false;}
         const auto draw_y = display.scroll(0);
         dance_offset = draw_y;
         display.draw_bitmap({60, 60}, {120, 160}, dance_buff, ui::Color::yellow(), ui::Color::blue());
         dance_buff_ready = false;
-        dance_buffer_check_and_update();
         return true;
     }
 
     bool Lyra2View::read_dance_frame()
     {
         if (!dance_is_found) {return false;}
+        if (dance_buff_ready == true) {return false;}
         if (dance_pointer > dance.size())
         {
-            dance_is_found = false;
+            //dance_is_found = false;
+            dance_pointer = 0;
         }
-        
+
         for (int i = 0; i < 6; i++) 
         {
             dance.seek(dance_pointer);
             dance.read(dance_buff+(i*DANCE_BUFF_READ_CHUNK_SIZE), DANCE_BUFF_READ_CHUNK_SIZE);
             dance_pointer += DANCE_BUFF_READ_CHUNK_SIZE;
         }
-
         dance_buff_ready = true;
         return true;
     }
 
     bool Lyra2View::tick_message()
     {
+
+        if (!alphabet_is_found) {return false;}
+
+        if (!letter_in_transmit)
+        {
+            //get letter 
+            if (letter_index < message.length())
+            {
+                dbg_letter = message[letter_index];
+                alphabet_index = font_order.find(message[letter_index]);
+                ::memcpy(letter_data, alphabet_buff + alphabet_index*8, 8);
+                letter_in_transmit = true;
+                scanline_index = 0;
+            }
+            letter_index = letter_index + 1;
+        }
+
+        //char debug_text[16];
+        //snprintf(debug_text, sizeof(debug_text), "%d %d %d %d", letter_index, scanline_index, alphabet_index, letter_data[scanline_index]);
+        //my_debug_label.set_labels({ui::Labels::Label{{120, 30}, debug_text, Color::green()}});
+
+        //get scanline
+        std::array<Color, 8*LETTER_SCALE> pixel_row;
+        for (int i = 0; i < 8; i++)
+        {
+            int rvalue = rand() & 0x1f;
+            ui::Color rndval = rvalue > 30 ? ui::Color(0, 200, 255) : ui::Color(0, 0, 255);
+            ui::Color used = (letter_data[scanline_index] & (1 << (7-i))) ? ui::Color(255, 255, 0) : rndval;
+            for (int s = 0; s < LETTER_SCALE; s++)
+            {
+                pixel_row[i*LETTER_SCALE + s] = used;
+            }
+        }
+        
+        //draw pixel
+        const auto draw_y = display.scroll(0);
+        display.draw_pixels( {{240-25-LETTER_SCALE*4, draw_y}, {pixel_row.size(), 1}}, pixel_row);
+
+        //if last scanline -> get next letter
+        letter_scale_iter = letter_scale_iter + 1;
+        if (letter_scale_iter == LETTER_SCALE) {
+            scanline_index = scanline_index + 1;
+            letter_scale_iter = 0;
+        }
+        if (scanline_index == 8)
+        {
+            letter_in_transmit = false;
+            scanline_index = 0;
+        }
+        //if last letter is done - > repeat?
+        if (letter_index >= message.length())
+        {
+            letter_index = 0;
+        }
         return true;
     }
 
     void Lyra2View::peaks_buffer_check_and_update() 
     {
         if (!peaks_is_found) {return;}
-        peak_index = peak_index + 1;
-        
+
         if (peak_index < PEAKS_BUFF_SIZE_HALF && peaks_buff_index_ready == 0){
             int diff = (PEAKS_BUFF_SIZE_HALF - peak_index);
             if (diff < PEAKS_BUFF_SIZE_QUARTER) {
@@ -169,12 +232,10 @@ namespace ui
             peaks_is_found = false;
         }
 
-        if (peak_index >= PEAKS_BUFF_SIZE) {peak_index = 0;}
+
     }
     void Lyra2View::dance_buffer_check_and_update()
     {
-        if (dance_frame_wait < 2)  {dance_frame_wait = dance_frame_wait + 1; return;}
-        dance_frame_wait = 0;
         read_dance_frame();
     }
     void Lyra2View::message_buffer_check_and_update() {}
@@ -191,17 +252,17 @@ namespace ui
         (void)return_code;
         stop_wav();
 
-        if (return_code == ReplayThread::READ_ERROR)
+        if (return_code == ReplayThreadControlled::READ_ERROR)
         {
             nav_.display_modal("Error", "File read error.");
         }
 
-        if (return_code == ReplayThread::END_OF_FILE)
+        if (return_code == ReplayThreadControlled::END_OF_FILE)
         {
             nav_.display_modal("Error", "End of File.");
         }
 
-        if (return_code == ReplayThread::TERMINATED)
+        if (return_code == ReplayThreadControlled::TERMINATED)
         {
             nav_.display_modal("Error", "Terminated.");
         }
@@ -216,9 +277,9 @@ namespace ui
     void Lyra2View::on_playback_progress(const uint32_t progress)
     {
         //debug
-        char debug_text[16];
-        snprintf(debug_text, sizeof(debug_text), "%ld %d %d", progress, (int)((bool)replay_thread), (int)ready_signal);
-        my_debug_label.set_labels({ui::Labels::Label{{120, 30}, debug_text, Color::green()}});
+        //char debug_text[16];
+        //snprintf(debug_text, sizeof(debug_text), "%ld %d %d", progress, (int)((bool)replay_thread), (int)ready_signal);
+        //my_debug_label.set_labels({ui::Labels::Label{{120, 30}, debug_text, Color::green()}});
 
     }
 
@@ -238,7 +299,7 @@ namespace ui
         sample_rate = reader->sample_rate();
         bits_per_sample = reader->bits_per_sample();
 
-        replay_thread = std::make_unique<ReplayThread>(
+        replay_thread = std::make_unique<ReplayThreadControlled>(
             std::move(reader),
             read_size, buffer_count,
             &ready_signal,
@@ -247,6 +308,9 @@ namespace ui
                 EventDispatcher::send_message(message);
             });
 
+        replay_thread->setSyncTask([this]() {
+            this->check_and_read_buffers();
+        });
         char debug_text[16];
         snprintf(debug_text, sizeof(debug_text), "%lu %d", sample_rate, (int)((bool)replay_thread));
         my_debug_label.set_labels({ui::Labels::Label{{120, 30}, debug_text, Color::green()}});
@@ -279,5 +343,11 @@ namespace ui
         }
         audio::output::stop();
         ready_signal = false;
+    }
+
+    void Lyra2View::check_and_read_buffers() 
+    {
+        peaks_buffer_check_and_update();
+        dance_buffer_check_and_update();
     }
 }
